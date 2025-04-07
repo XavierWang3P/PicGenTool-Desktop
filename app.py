@@ -294,12 +294,25 @@ class DocumentGenerator:
         file_name = ''.join(c for c in file_name if c not in '<>:"/\\|?*')
         
         # 获取第一张照片所在的文件夹作为默认保存位置
-        default_dir = os.path.dirname(pgt.image_processor.images[0]) if pgt.image_processor.images else ''
+        default_dir = ''
+        if pgt.image_processor.images:
+            try:
+                # 使用绝对路径并规范化路径分隔符
+                default_dir = os.path.dirname(os.path.abspath(pgt.image_processor.images[0]))
+                # 确保路径存在且可访问
+                if not os.path.exists(default_dir) or not os.access(default_dir, os.W_OK):
+                    default_dir = ''
+            except Exception as e:
+                pgt.logger.warning(f"获取默认保存路径失败: {str(e)}")
+                default_dir = ''
+        
+        # 构建完整的默认保存路径
+        default_path = os.path.join(default_dir, file_name) if default_dir else file_name
         
         return QFileDialog.getSaveFileName(
             None,
             '保存文档',
-            os.path.join(default_dir, file_name),
+            default_path,
             'Word 文档 (*.docx)'
         )[0]
 
