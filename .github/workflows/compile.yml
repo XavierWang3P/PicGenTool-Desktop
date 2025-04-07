@@ -85,4 +85,8 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: dist/${{ env.OUTPUT_FILE_PREFIX }}.${{ steps.get_version.outputs.version }}.exe
           asset_name: ${{ env.OUTPUT_FILE_PREFIX }}.${{ steps.get_version.outputs.version }}.exe
+<<<<<<< HEAD
           asset_content_type: application/octet-stream
+=======
+          asset_content_type: application/octet-stream
+>>>>>>> 344160b66087348101a5b921baf6b5d9ea5e520e
