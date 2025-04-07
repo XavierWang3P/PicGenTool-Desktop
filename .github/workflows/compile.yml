@@ -44,6 +44,12 @@ jobs:
           echo "Using version: ${{ steps.get_version.outputs.version }}"
           pyinstaller --onefile --add-data "templates;templates" --add-data "favicon.png;." --icon="favicon.png" --windowed --clean --name "${{ env.OUTPUT_FILE_PREFIX }}.${{ steps.get_version.outputs.version }}" app.py
 
+      - name: Delete existing tag if exists
+        run: |
+          $tag_name="v${{ steps.get_version.outputs.version }}"
+          git tag -d $tag_name 2>/dev/null || true
+          git push origin :refs/tags/$tag_name 2>/dev/null || true
+
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
