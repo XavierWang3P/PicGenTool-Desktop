@@ -53,7 +53,7 @@ jobs:
           echo "Using version: ${{ steps.get_version.outputs.version }}"
           if (Test-Path pgt.spec) {
               pyinstaller pgt.spec --clean --noconfirm
-              Move-Item -Path "dist/pgt.exe" -Destination "dist/${{ env.OUTPUT_FILE_PREFIX }}.${{ steps.get_version.outputs.version }}.exe" -Force
+              Move-Item -Path "dist/图片文档生成工具.exe" -Destination "dist/${{ env.OUTPUT_FILE_PREFIX }}.${{ steps.get_version.outputs.version }}.exe" -Force
           } else {
               pyinstaller --onefile --add-data "templates;templates" --add-data "favicon.png;." --icon="favicon.png" --windowed --clean --name "${{ env.OUTPUT_FILE_PREFIX }}.${{ steps.get_version.outputs.version }}" app.py
           }
