@@ -7,3 +7,5 @@ lib/
 logs/
 TEST_Image/
 .gitignore
+pyvenv.cfg
+__pycache__
