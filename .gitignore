@@ -2,6 +2,8 @@
 .temp/
 .vscode/
 bin/
+build/
+dist/
 include/
 lib/
 logs/
