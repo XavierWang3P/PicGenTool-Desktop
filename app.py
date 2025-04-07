@@ -292,10 +292,14 @@ class DocumentGenerator:
         file_name = f'{date_str}-{title}照片.docx'
         # 确保文件名中不包含非法字符
         file_name = ''.join(c for c in file_name if c not in '<>:"/\\|?*')
+        
+        # 获取第一张照片所在的文件夹作为默认保存位置
+        default_dir = os.path.dirname(pgt.image_processor.images[0]) if pgt.image_processor.images else ''
+        
         return QFileDialog.getSaveFileName(
             None,
             '保存文档',
-            file_name,
+            os.path.join(default_dir, file_name),
             'Word 文档 (*.docx)'
         )[0]
 
