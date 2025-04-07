@@ -36,13 +36,26 @@ jobs:
       - name: Get version
         id: get_version
         run: |
-          $version = (Get-Content version.txt | Select-String -Pattern "FileVersion', u'([\d\.]+)'" | ForEach-Object { $_.Matches.Groups[1].Value })
-          echo "version=$version" >> $env:GITHUB_OUTPUT
+          $content = Get-Content version.txt -Raw
+          if ($content -match "FileVersion', u'([\d\.]+)'")
+          {
+              $version = $matches[1]
+              echo "version=$version" >> $env:GITHUB_OUTPUT
+          }
+          else
+          {
+              echo "::error::Failed to extract version from version.txt"
+              exit 1
+          }
 
       - name: Build executable
         run: |
           echo "Using version: ${{ steps.get_version.outputs.version }}"
-          pyinstaller --onefile --add-data "templates;templates" --add-data "favicon.png;." --icon="favicon.png" --windowed --clean --name "${{ env.OUTPUT_FILE_PREFIX }}.${{ steps.get_version.outputs.version }}" app.py
+          if (Test-Path pgt.spec) {
+              pyinstaller pgt.spec --clean --noconfirm
+          } else {
+              pyinstaller --onefile --add-data "templates;templates" --add-data "favicon.png;." --icon="favicon.png" --windowed --clean --name "${{ env.OUTPUT_FILE_PREFIX }}.${{ steps.get_version.outputs.version }}" app.py
+          }
 
       - name: Delete existing tag if exists
         run: |
@@ -60,20 +73,6 @@ jobs:
           release_name: Release ${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false
-
-      - name: Delete old releases
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh auth status
-          $current_release = "v${{ steps.get_version.outputs.version }}"
-          $releases = gh release list --limit 1000 | Where-Object { $_ -match '^v\d+\.\d+\.\d+\s+' } | ForEach-Object { $_.Split()[0] }
-          foreach ($release in $releases) {
-            if ($release -ne $current_release -and $release -match '^v\d+\.\d+\.\d+$') {
-              Write-Host "Deleting release: $release"
-              gh release delete $release --cleanup-tag -y
-            }
-          }
 
       - name: Upload release asset
         uses: actions/upload-release-asset@v1
