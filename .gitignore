@@ -1,0 +1,23 @@
+# Windows:
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS:
+.DS_Store
+
+
+# Python:
+*.py[cod]
+*.so
+*.egg
+*.egg-info
+dist
+build
+bin
+include
+lib
+pyvenv.cfg
+
+# Git
+git
