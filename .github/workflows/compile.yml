@@ -59,11 +59,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          gh auth status
           $current_release = "v${{ steps.get_version.outputs.version }}"
-          $releases = gh release list --limit 1000 | ForEach-Object { $_.Split()[0] }
+          $releases = gh release list --limit 1000 | Where-Object { $_ -match '^v\d+\.\d+\.\d+\s+' } | ForEach-Object { $_.Split()[0] }
           foreach ($release in $releases) {
-            if ($release -ne $current_release) {
-              echo "Deleting release: $release"
+            if ($release -ne $current_release -and $release -match '^v\d+\.\d+\.\d+$') {
+              Write-Host "Deleting release: $release"
               gh release delete $release --cleanup-tag -y
             }
           }
