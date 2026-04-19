@@ -35,7 +35,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='图片文档生成工具',
+    name='PGT',
     debug=False,
     strip=False,
     upx=False,
@@ -51,5 +51,5 @@ coll = COLLECT(
     a.datas,
     strip=False,
     upx=False,
-    name='图片文档生成工具',
+    name='PGT',
 )

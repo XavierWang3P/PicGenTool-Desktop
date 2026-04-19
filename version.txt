@@ -17,9 +17,9 @@ VSVersionInfo(
          [StringStruct(u'CompanyName', u'Xavier Wang'),
           StringStruct(u'FileDescription', u'图片文档生成工具'),
            StringStruct(u'FileVersion', u'3.1.1'),
-           StringStruct(u'InternalName', u'PicGenTool'),
+           StringStruct(u'InternalName', u'PGT'),
            StringStruct(u'LegalCopyright', u'Copyright (C) 2025 Xavier Wang.'),
-           StringStruct(u'OriginalFilename', u'PicGenTool.exe'),
+           StringStruct(u'OriginalFilename', u'PGT.exe'),
            StringStruct(u'ProductName', u'图片文档生成工具'),
            StringStruct(u'ProductVersion', u'3.1.1')])
       ])
