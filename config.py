@@ -4,6 +4,7 @@ MARGINS = (18, 16, 18, 16)
 SPACING = 10
 LOG_LEVEL = "INFO"
 LOG_FILE_NAME = "app.log"
+DEFAULT_ACTIVITY_LOCATION = ""
 
 SUPPORTED_FORMATS = {".png", ".jpg", ".jpeg", ".gif", ".bmp"}
 IMAGE_QUALITY = 60

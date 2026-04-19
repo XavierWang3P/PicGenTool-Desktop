@@ -21,7 +21,15 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from config import APP_STYLES, APP_TITLE, MAX_IMAGES, MARGINS, SPACING, SUPPORTED_FORMATS
+from config import (
+    APP_STYLES,
+    APP_TITLE,
+    DEFAULT_ACTIVITY_LOCATION,
+    MAX_IMAGES,
+    MARGINS,
+    SPACING,
+    SUPPORTED_FORMATS,
+)
 from models.generation_task import GenerationTask
 from services.document_service import DocumentService
 from services.image_service import ImageService
@@ -97,6 +105,7 @@ class MainWindow(QWidget):
         self.title_input = QLineEdit(placeholderText="请输入活动标题")
         self.location_label = QLabel("活动地点")
         self.location_input = QLineEdit(placeholderText="请输入活动地点")
+        self.location_input.setText(DEFAULT_ACTIVITY_LOCATION)
 
         self.date_label = QLabel("活动日期")
         self.date_input = QDateEdit()
@@ -292,7 +301,7 @@ class MainWindow(QWidget):
 
     def _clear_form_fields(self) -> None:
         self.title_input.clear()
-        self.location_input.clear()
+        self.location_input.setText(DEFAULT_ACTIVITY_LOCATION)
         self.date_input.setDate(QDate.currentDate())
         self.image_paths.clear()
         self._update_image_count()
