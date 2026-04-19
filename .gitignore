@@ -1,0 +1,17 @@
+.git/
+.temp/
+.venv/
+.vscode/
+bin/
+build/
+dist/
+include/
+lib/
+logs/
+TEST_Image/
+pyvenv.cfg
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*/__pycache__/
