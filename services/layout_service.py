@@ -16,13 +16,8 @@ class LayoutService:
         task: GenerationTask,
         prepared_images: list[Path],
     ) -> WordExportPayload:
-        from docx.shared import Mm
-        from docxtpl import DocxTemplate, InlineImage
-
         template_path = self.template_service.get_template_path(len(task.image_paths))
-        doc = DocxTemplate(str(template_path))
-
-        context = {
+        text_context = {
             "title": task.title,
             "location": task.location,
             "dateForDoc": (
@@ -31,11 +26,10 @@ class LayoutService:
                 f"{task.activity_date.day}日"
             ),
         }
-        for index, path in enumerate(prepared_images, start=1):
-            context[f"image{index}"] = InlineImage(doc, str(path), width=Mm(72))
 
         return WordExportPayload(
             template_path=template_path,
-            context=context,
+            text_context=text_context,
+            image_paths=prepared_images,
             output_path=task.save_path,
         )

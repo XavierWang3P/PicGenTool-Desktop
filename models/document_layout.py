@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 
 @dataclass(slots=True)
 class WordExportPayload:
     template_path: Path
-    context: dict[str, Any]
+    text_context: dict[str, str]
+    image_paths: list[Path]
     output_path: Path
-

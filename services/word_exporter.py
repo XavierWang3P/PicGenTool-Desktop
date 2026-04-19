@@ -7,7 +7,8 @@ from models.document_layout import WordExportPayload
 
 class WordExporter:
     def export(self, payload: WordExportPayload) -> Path:
-        from docxtpl import DocxTemplate
+        from docx.shared import Mm
+        from docxtpl import DocxTemplate, InlineImage
 
         try:
             doc = DocxTemplate(str(payload.template_path))
@@ -15,7 +16,11 @@ class WordExporter:
             raise IOError(f"模板文件打开失败：{exc}") from exc
 
         try:
-            doc.render(payload.context)
+            context = dict(payload.text_context)
+            for index, path in enumerate(payload.image_paths, start=1):
+                context[f"image{index}"] = InlineImage(doc, str(path), width=Mm(72))
+
+            doc.render(context)
             doc.save(str(payload.output_path))
         except PermissionError as exc:
             raise IOError("无法保存文档，请检查文件权限或文件是否被占用") from exc
