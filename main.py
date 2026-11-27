@@ -233,6 +233,10 @@ def run_diagnostics() -> int:
 
 
 def main() -> int:
+    from agent_cli import AGENT_OPTIONS, run_agent_cli
+
+    if any(argument in AGENT_OPTIONS for argument in sys.argv[1:]):
+        return run_agent_cli(sys.argv[1:])
     logger = setup_logging()
     if "--diagnose" in sys.argv[1:]:
         return run_diagnostics()

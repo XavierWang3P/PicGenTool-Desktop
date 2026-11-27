@@ -56,9 +56,10 @@ class GenerationService:
             except BaseException:
                 cancellation.cancel()
                 try:
-                    prepared = image_future.result()
-                except BaseException:
-                    pass
+                    image_future.result()
+                except BaseException as image_error:
+                    if not isinstance(image_error, GenerationCancelled):
+                        raise image_error
                 raise
 
             prepared = image_future.result()
@@ -72,15 +73,10 @@ class GenerationService:
             if progress:
                 progress("生成完成", 100)
             return docx_path
-        except GenerationCancelled:
+        except BaseException:
+            cancellation.cancel()
             raise
         finally:
-            cancellation.cancel()
-            if image_future is not None and not image_future.done():
-                try:
-                    image_future.result()
-                except BaseException:
-                    pass
             executor.shutdown(wait=True, cancel_futures=False)
             if prepared:
                 try:
