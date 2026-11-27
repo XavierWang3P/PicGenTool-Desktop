@@ -33,7 +33,7 @@ from config import (
     SUPPORTED_FORMATS,
 )
 from models.generation_task import GenerationTask
-from services.document_service import DocumentService
+from services.generation_service import GenerationService
 from services.image_service import ImageService
 from services.settings_service import SettingsService, UserPreferences
 from services.template_service import TemplateService
@@ -53,8 +53,9 @@ class GenerationWorker(QObject):
 
         self.task = task
         self.logger = logging.getLogger("pgt.worker")
-        self.image_service = ImageService()
-        self.document_service = DocumentService()
+        self.service = GenerationService()
+        self.image_service = self.service.image_service
+        self.document_service = self.service.document_service
         self.cancellation = CancellationToken()
 
     def cancel(self) -> None:
@@ -63,70 +64,24 @@ class GenerationWorker(QObject):
     def run(self) -> None:
         from services.cancellation import GenerationCancelled
 
-        prepared = None
-        image_future: Future | None = None
-        executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="pgt-image")
         try:
-            image_future = executor.submit(
-                self.image_service.prepare_images,
-                self.task.image_paths,
+            docx_path = self.service.run(
+                self.task,
                 self._emit_progress,
-                cancellation=self.cancellation,
+                self.cancellation,
             )
-            self._emit_progress("正在准备 Word 模板", 60)
-            try:
-                prepared_word = self.document_service.prepare(
-                    self.task,
-                    cancellation=self.cancellation,
-                )
-            except BaseException:
-                self.cancellation.cancel()
-                try:
-                    prepared = image_future.result()
-                except BaseException:
-                    pass
-                raise
-
-            prepared = image_future.result()
-            docx_path = self.document_service.export_prepared(
-                prepared_word,
-                prepared.image_paths,
-                self._emit_progress,
-                cancellation=self.cancellation,
-            )
-
             if self.task.open_file:
                 self.cancellation.raise_if_cancelled()
                 self._emit_progress("正在打开生成文件", 94)
                 open_with_default_app(docx_path)
-
             self._emit_progress("生成完成", 100)
-            self.success.emit(
-                {
-                    "docx_path": str(docx_path),
-                }
-            )
+            self.success.emit({"docx_path": str(docx_path)})
         except GenerationCancelled:
             self.cancelled.emit()
         except Exception as exc:
             self.logger.error("生成文档失败: error_type=%s", type(exc).__name__)
             self.error.emit(self._safe_error_message(exc))
         finally:
-            self.cancellation.cancel()
-            if image_future is not None and not image_future.done():
-                try:
-                    image_future.result()
-                except BaseException:
-                    pass
-            executor.shutdown(wait=True, cancel_futures=False)
-            if prepared:
-                try:
-                    prepared.cleanup()
-                except OSError as exc:
-                    self.logger.warning(
-                        "清理图片临时文件失败: error_type=%s",
-                        type(exc).__name__,
-                    )
             self.finished.emit()
 
     def _emit_progress(self, message: str, value: int) -> None:
