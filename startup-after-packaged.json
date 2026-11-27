@@ -1,0 +1,10 @@
+﻿{
+    "runs_ms":  [
+                    1774.51,
+                    197.206,
+                    224.488
+                ],
+    "median_ms":  224.488,
+    "log_path":  "C:\\Users\\XW\\AppData\\Local\\PicGenTool\\logs\\app.log",
+    "bundled_log_count":  0
+}

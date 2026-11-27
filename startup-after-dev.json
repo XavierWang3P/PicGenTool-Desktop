@@ -1,0 +1,16 @@
+{
+  "runs_ms": [
+    148.039,
+    144.11,
+    141.566,
+    140.175,
+    153.486
+  ],
+  "median_ms": 144.11,
+  "stages_median_ms": {
+    "imports": 107.41,
+    "qapplication": 8.278,
+    "main_window": 24.689,
+    "first_event": 1.433
+  }
+}

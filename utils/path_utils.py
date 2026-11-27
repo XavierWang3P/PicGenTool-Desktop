@@ -11,6 +11,16 @@ def project_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
+def user_data_root() -> Path:
+    if sys.platform == "win32":
+        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+    elif sys.platform == "darwin":
+        base = Path.home() / "Library" / "Application Support"
+    else:
+        base = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
+    return base / "PicGenTool"
+
+
 def ensure_directory(path: Path) -> Path:
     path.mkdir(parents=True, exist_ok=True)
     return path
@@ -37,4 +47,3 @@ def open_with_default_app(path: Path) -> None:
         os.startfile(str(path))  # type: ignore[attr-defined]
         return
     subprocess.run(["xdg-open", str(path)], check=False)
-

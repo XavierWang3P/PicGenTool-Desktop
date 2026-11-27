@@ -1,0 +1,94 @@
+{
+  "root": "D:\\Projects\\PicGenTool\\dist\\PGT",
+  "file_count": 944,
+  "total_bytes": 118594155,
+  "total_mib": 113.10019969940186,
+  "max_bytes": 136314880,
+  "within_budget": true,
+  "groups": {
+    "_internal": 118110058,
+    "(root)": 484097
+  },
+  "largest_files": [
+    {
+      "path": "_internal/PyQt6/Qt6/bin/opengl32sw.dll",
+      "bytes": 20639888
+    },
+    {
+      "path": "_internal/PyQt6/Qt6/bin/Qt6Core.dll",
+      "bytes": 10363704
+    },
+    {
+      "path": "_internal/PyQt6/Qt6/bin/Qt6Gui.dll",
+      "bytes": 9546552
+    },
+    {
+      "path": "_internal/PyQt6/Qt6/bin/Qt6Widgets.dll",
+      "bytes": 6497080
+    },
+    {
+      "path": "_internal/python311.dll",
+      "bytes": 5800216
+    },
+    {
+      "path": "_internal/libcrypto-3.dll",
+      "bytes": 5191960
+    },
+    {
+      "path": "_internal/PyQt6/QtWidgets.pyd",
+      "bytes": 5072896
+    },
+    {
+      "path": "_internal/lxml/etree.cp311-win_amd64.pyd",
+      "bytes": 4049920
+    },
+    {
+      "path": "_internal/PyQt6/QtCore.pyd",
+      "bytes": 2666496
+    },
+    {
+      "path": "_internal/libstdc++-6-110c9d51f08f0d1d0f38fa2f49cf7128.dll",
+      "bytes": 2660352
+    },
+    {
+      "path": "_internal/PIL/_imaging.cp311-win_amd64.pyd",
+      "bytes": 2588160
+    },
+    {
+      "path": "_internal/PyQt6/QtGui.pyd",
+      "bytes": 2310144
+    },
+    {
+      "path": "_internal/libheif-75127e764628a95f6db9f5070bfc87cb.dll",
+      "bytes": 2125312
+    },
+    {
+      "path": "_internal/PyQt6/Qt6/bin/Qt6Network.dll",
+      "bytes": 1751352
+    },
+    {
+      "path": "_internal/lxml/objectify.cp311-win_amd64.pyd",
+      "bytes": 1744896
+    },
+    {
+      "path": "_internal/unicodedata.pyd",
+      "bytes": 1140504
+    },
+    {
+      "path": "_internal/PyQt6/Qt6/plugins/platforms/qwindows.dll",
+      "bytes": 991032
+    },
+    {
+      "path": "_internal/libde265-0-aa0625e0aec56a9d4310a2447674dd8a.dll",
+      "bytes": 940544
+    },
+    {
+      "path": "_internal/PyQt6/QtNetwork.pyd",
+      "bytes": 823296
+    },
+    {
+      "path": "_internal/libssl-3.dll",
+      "bytes": 787224
+    }
+  ]
+}
