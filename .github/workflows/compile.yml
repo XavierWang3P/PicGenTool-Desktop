@@ -112,6 +112,24 @@ jobs:
           $env:PYTHONUTF8 = "1"
           ./dist/PGT/PGT.exe --capabilities --json
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $smokeDir = Join-Path $env:RUNNER_TEMP "pgt-agent-smoke"
+          New-Item -ItemType Directory -Path $smokeDir -Force | Out-Null
+          $imagePath = Join-Path $smokeDir "input.jpg"
+          $outputPath = Join-Path $smokeDir "output.docx"
+          $resultPath = Join-Path $smokeDir "result.json"
+          python -c "from PIL import Image; import sys; Image.new('RGB', (320, 240), (40, 80, 120)).save(sys.argv[1])" $imagePath
+          $request = @{
+            schema_version = 1
+            title = "CI headless smoke"
+            location = "GitHub Actions"
+            activity_date = "2026-11-27"
+            images = @($imagePath)
+            output = $outputPath
+          } | ConvertTo-Json -Compress
+          $stdoutPath = Join-Path $smokeDir "stdout.json"
+          $request | ./dist/PGT/PGT.exe --generate - --result-file $resultPath --json | Set-Content -Path $stdoutPath -Encoding utf8
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -c "import json,sys,zipfile; from pathlib import Path; result=json.loads(Path(sys.argv[1]).read_text(encoding='utf-8-sig')); saved=json.loads(Path(sys.argv[2]).read_text(encoding='utf-8')); assert result['ok'] and saved['ok']; assert 'word/document.xml' in zipfile.ZipFile(sys.argv[3]).namelist()" $stdoutPath $resultPath $outputPath
 
       - name: Check package size
         shell: pwsh

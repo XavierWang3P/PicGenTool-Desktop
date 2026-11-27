@@ -12,6 +12,10 @@ if TYPE_CHECKING:
     from services.cancellation import CancellationToken
 
 
+class TemplatePreparationError(IOError):
+    """Template open failed independently of the output path."""
+
+
 class WordExporter:
     def prepare(
         self,
@@ -28,7 +32,7 @@ class WordExporter:
             with measure(logger, "word_open", image_count=len(payload.image_paths)):
                 document = DocxTemplate(str(payload.template_path))
         except Exception as exc:
-            raise IOError("模板文件打开失败，请检查模板完整性") from exc
+            raise TemplatePreparationError("模板文件打开失败，请检查模板完整性") from exc
         if cancellation:
             cancellation.raise_if_cancelled()
         return PreparedWordExport(

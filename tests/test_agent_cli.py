@@ -150,14 +150,43 @@ def test_batch_continues_after_bad_line(tmp_path: Path) -> None:
     assert Path(valid["output"]).exists()
 
 
+def test_result_file_cannot_replace_document(tmp_path: Path) -> None:
+    payload = request(tmp_path)
+    completed = invoke([
+        "--generate", "-", "--result-file", payload["output"]
+    ], json.dumps(payload, ensure_ascii=False))
+
+    assert completed.returncode == 2
+    assert json.loads(completed.stdout)["error"]["code"] == "INVALID_REQUEST"
+    assert not Path(payload["output"]).exists()
+
+
+def test_result_file_is_exclusive_and_json(tmp_path: Path) -> None:
+    payload = request(tmp_path)
+    result_file = tmp_path / "result.json"
+    arguments = ["--generate", "-", "--result-file", str(result_file)]
+    completed = invoke(arguments, json.dumps(payload, ensure_ascii=False))
+    assert completed.returncode == 0
+    assert json.loads(result_file.read_text(encoding="utf-8"))["ok"] is True
+    assert Path(payload["output"]).stat().st_size > 0
+
+    payload["output"] = str(tmp_path / "second.docx")
+    completed = invoke(arguments, json.dumps(payload))
+    assert completed.returncode == 2
+    assert json.loads(result_file.read_text(encoding="utf-8"))["output"] == str(
+        tmp_path / "out.docx"
+    )
+
+
 def test_persistent_server_recovers_and_correlates_ids(tmp_path: Path) -> None:
     valid = request(tmp_path)
     requests = "\n".join([
         "{bad",
         json.dumps({"id": "first", "request": valid}, ensure_ascii=False),
         json.dumps({"id": 2, "request": {"schema_version": 1}}),
+        json.dumps({"id": 42, "request": {}, "extra": True}),
     ]) + "\n"
     completed = invoke(["--serve"], requests)
     lines = [json.loads(line) for line in completed.stdout.splitlines()]
-    assert [line["id"] for line in lines] == [None, "first", 2]
-    assert [line["result"]["ok"] for line in lines] == [False, True, False]
+    assert [line["id"] for line in lines] == [None, "first", 2, 42]
+    assert [line["result"]["ok"] for line in lines] == [False, True, False, False]

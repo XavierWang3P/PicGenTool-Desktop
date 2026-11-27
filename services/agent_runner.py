@@ -84,35 +84,34 @@ def run_batch(
     tokens_lock = threading.Lock()
     with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="pgt-agent") as pool:
         pending: list[tuple[int, Future]] = []
-        while True:
-            while not stopped and len(pending) < workers:
-                try:
-                    item = next(source)
-                    pending.append(
-                        (
-                            item[0],
-                            pool.submit(
-                                _run_one, api, item[1], timeout, tokens, tokens_lock
-                            ),
+        try:
+            while True:
+                while not stopped and len(pending) < workers:
+                    try:
+                        item = next(source)
+                        pending.append(
+                            (
+                                item[0],
+                                pool.submit(
+                                    _run_one, api, item[1], timeout, tokens, tokens_lock
+                                ),
+                            )
                         )
-                    )
-                except StopIteration:
+                    except StopIteration:
+                        break
+                if not pending:
                     break
-            if not pending:
-                break
-            line, future = pending.pop(0)
-            try:
+                line, future = pending.pop(0)
                 result = future.result()
-            except KeyboardInterrupt:
-                with tokens_lock:
-                    for token in tokens:
-                        token.cancel()
-                for _, running in pending:
-                    running.cancel()
-                raise
-            yield {"line": line, **result}
-            if on_error == "stop" and not result.get("ok"):
-                stopped = True
+                yield {"line": line, **result}
+                if on_error == "stop" and not result.get("ok"):
+                    stopped = True
+        finally:
+            with tokens_lock:
+                for token in tokens:
+                    token.cancel()
+            for _, running in pending:
+                running.cancel()
 
 
 def run_batch_file(path: Path, api: AgentAPI, **options) -> Iterator[dict]:
@@ -130,6 +129,8 @@ def run_server(api: AgentAPI, stdin, stdout) -> int:
             if len(raw) > MAX_LINE_BYTES:
                 raise ValueError("请求行超过 1 MiB 限制")
             envelope = json.loads(raw.decode("utf-8-sig"))
+            if isinstance(envelope, dict):
+                request_id = envelope.get("id")
             if not isinstance(envelope, dict) or set(envelope) - {"id", "request"}:
                 raise ValueError("服务请求必须只包含 id 和 request")
             request_id = envelope.get("id")

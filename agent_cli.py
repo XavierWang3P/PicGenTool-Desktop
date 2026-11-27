@@ -117,6 +117,19 @@ def run_agent_cli(argv: list[str], stdin=None, stdout=None, stderr=None) -> int:
     _configure_utf8(stderr)
     try:
         args = build_parser().parse_args(argv)
+        if args.generate and args.result_file:
+            if args.result_file.exists():
+                raise ValueError("结果文件已存在，拒绝覆盖")
+            if args.generate == "-":
+                payload = _read_request(args.generate, stdin)
+                output = payload.get("output") if isinstance(payload, dict) else None
+                if isinstance(output, str) and _same_path(Path(output), args.result_file):
+                    raise ValueError("结果文件不能与文档输出路径相同")
+                result = AgentAPI().generate(payload)
+                code = _exit_code(result)
+                _save_result(args.result_file, result)
+                _write_json(result, stdout)
+                return code
         api = AgentAPI()
         if args.diagnose:
             result = _diagnostics_payload()
@@ -129,6 +142,10 @@ def run_agent_cli(argv: list[str], stdin=None, stdout=None, stderr=None) -> int:
             code = 0 if result["ok"] else 3
         elif args.validate or args.generate:
             payload = _read_request(args.validate or args.generate, stdin)
+            if args.generate and args.result_file and isinstance(payload, dict):
+                output = payload.get("output")
+                if isinstance(output, str) and _same_path(Path(output), args.result_file):
+                    raise ValueError("结果文件不能与文档输出路径相同")
             result = api.validate(payload) if args.validate else api.generate(payload)
             code = _exit_code(result)
         elif args.batch or args.serve:
@@ -158,18 +175,35 @@ def run_agent_cli(argv: list[str], stdin=None, stdout=None, stderr=None) -> int:
             "error": {"code": "INVALID_REQUEST", "message": str(exc), "details": {}},
         }
         code = 2
-    except Exception as exc:
+        _write_json(result, stdout)
+        return code
         result = api.failure(exc) if "api" in locals() else {
             "ok": False,
             "error": {"code": "INTERNAL_ERROR", "message": "发生未预期错误", "details": {}},
         }
         code = 1
-    if args.result_file if "args" in locals() else False:
-        args.result_file.write_text(
-            json.dumps(result, ensure_ascii=False), encoding="utf-8"
-        )
+    if "args" in locals() and args.result_file:
+        _save_result(args.result_file, result)
     _write_json(result, stdout)
     return code
+
+
+def _same_path(first: Path, second: Path) -> bool:
+    import os
+
+    return os.path.normcase(str(first.resolve(strict=False))) == os.path.normcase(
+        str(second.resolve(strict=False))
+    )
+
+
+def _save_result(path: Path, result: dict) -> None:
+    try:
+        with path.open("x", encoding="utf-8") as output:
+            json.dump(result, output, ensure_ascii=False)
+    except FileExistsError as exc:
+        raise ValueError("结果文件已存在，拒绝覆盖") from exc
+    except OSError as exc:
+        raise ValueError("无法写入结果文件") from exc
 
 
 def api_error(message: str):

@@ -79,7 +79,7 @@ python main.py --serve --json
 
 stdout 每行返回 `{"id":"job-1","result":{...}}`。服务按输入顺序同步执行，避免重入；坏请求返回错误后可继续处理下一行，EOF 正常退出。此接口不提供远程任务查询或异步 job ID 轮询；需要异步编排时由 Agent 管理子进程。
 
-`--result-file result.json` 可将单任务、能力、Schema 或诊断结果同时写入指定文件，适用于无法捕获 stdout 的启动器；该文件由调用方管理，不作为历史任务存储。
+`--result-file result.json` 可将单任务、能力、Schema 或诊断结果同时写入指定文件，适用于无法捕获 stdout 的启动器。结果文件使用独占创建，已存在即拒绝，且不得与 DOCX 输出路径相同；批处理和常驻模式不支持该选项。
 
 ## 安全与重试
 

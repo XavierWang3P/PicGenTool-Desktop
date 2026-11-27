@@ -7,11 +7,14 @@ from pathlib import Path
 from uuid import uuid4
 
 from config import APP_VERSION, MAX_IMAGES, SUPPORTED_FORMATS
+from zipfile import BadZipFile
 from models.agent_contract import SCHEMA_VERSION
 from models.generation_task import GenerationTask
 from services.cancellation import GenerationCancelled
 from services.generation_service import GenerationService
 from services.image_service import ImageService
+from services.layout_service import LayoutService
+from services.document_service import DocumentService
 from services.template_service import TemplateService
 
 _REQUIRED_FIELDS = {
@@ -44,10 +47,13 @@ class AgentAPI:
         template_service: TemplateService | None = None,
     ) -> None:
         self.image_service = image_service or ImageService()
-        self.generation_service = generation_service or GenerationService(
-            image_service=self.image_service
-        )
         self.template_service = template_service or TemplateService()
+        self.generation_service = generation_service or GenerationService(
+            image_service=self.image_service,
+            document_service=DocumentService(
+                layout_service=LayoutService(template_service=self.template_service)
+            ),
+        )
         self.logger = logging.getLogger("pgt.agent")
 
     def validate(self, payload: object) -> dict:
@@ -78,24 +84,25 @@ class AgentAPI:
         try:
             prepared = self._prepare(payload)
             task = prepared["task"]
-            if prepared["skip"]:
-                return self._success(
-                    job_id,
-                    task.save_path,
-                    len(prepared["images"]),
-                    prepared["duplicates"],
-                    ["输出已存在，按要求跳过生成"],
-                    started,
-                    skipped=True,
-                )
-            output = self.generation_service.run(task, progress, cancellation)
+            output = self.generation_service.run(
+                task,
+                progress,
+                cancellation,
+                output_policy=prepared["if_exists"],
+            )
+            if output is None:
+                output = task.save_path
+                skipped = True
+            else:
+                skipped = False
             return self._success(
                 job_id,
                 output,
                 len(prepared["images"]),
                 prepared["duplicates"],
-                [],
+                ["输出已存在，按要求跳过生成"] if skipped else [],
                 started,
+                **({"skipped": True} if skipped else {}),
             )
         except Exception as exc:
             return self.failure(exc, job_id=job_id, started=started)
@@ -209,7 +216,7 @@ class AgentAPI:
         if_exists = data["options"]["if_exists"]
         if output.is_dir():
             raise AgentError("OUTPUT_NOT_WRITABLE", "输出路径是目录")
-        if output.exists():
+        if output.exists() and if_exists == "fail":
             if if_exists == "skip":
                 skip = True
             elif if_exists == "fail":
@@ -237,6 +244,7 @@ class AgentAPI:
             "images": images,
             "duplicates": deduplicated.duplicate_count,
             "skip": skip,
+            "if_exists": if_exists,
         }
 
     def _validate_request(self, payload: object) -> dict:
@@ -295,7 +303,9 @@ class AgentAPI:
                 "options 包含未知字段",
                 {"unknown_fields": unknown_options},
             )
-        if options.get("if_exists", "fail") not in {"fail", "skip", "overwrite"}:
+        if not isinstance(options.get("if_exists", "fail"), str) or options.get(
+            "if_exists", "fail"
+        ) not in {"fail", "skip", "overwrite"}:
             raise AgentError("INVALID_REQUEST", "if_exists 必须是 fail、skip 或 overwrite")
         if options.get("on_image_error", "fail") != "fail":
             raise AgentError("INVALID_REQUEST", "当前仅支持 on_image_error=fail")
@@ -321,8 +331,18 @@ class AgentAPI:
 
     @staticmethod
     def _map_error(error: Exception) -> tuple[str, str, dict]:
+        from services.word_exporter import TemplatePreparationError
+        from docx.opc.exceptions import PackageNotFoundError
+
+        current: BaseException | None = error
+        while current is not None:
+            if isinstance(current, (TemplatePreparationError, PackageNotFoundError, BadZipFile)):
+                return "TEMPLATE_MISSING", str(current), {}
+            current = current.__cause__ or current.__context__
         if isinstance(error, ValueError):
             return "IMAGE_READ_FAILED", str(error), {}
+        if isinstance(error, FileExistsError):
+            return "OUTPUT_EXISTS", "输出文件已存在", {}
         if isinstance(error, PermissionError):
             return "OUTPUT_NOT_WRITABLE", "无法写入输出文件，请检查路径或文件占用", {}
         if isinstance(error, FileNotFoundError):
