@@ -36,10 +36,19 @@ class AgentLineError(Exception):
     pass
 
 
-def _run_one(api: AgentAPI, payload: object, timeout: float | None) -> dict:
+def _run_one(
+    api: AgentAPI,
+    payload: object,
+    timeout: float | None,
+    tokens: set[CancellationToken] | None = None,
+    tokens_lock: threading.Lock | None = None,
+) -> dict:
     if isinstance(payload, AgentLineError):
         return api.failure(api_error(str(payload)))
     token = CancellationToken()
+    if tokens is not None and tokens_lock is not None:
+        with tokens_lock:
+            tokens.add(token)
     timer = None
     if timeout is not None:
         if timeout <= 0:
@@ -52,6 +61,9 @@ def _run_one(api: AgentAPI, payload: object, timeout: float | None) -> dict:
     finally:
         if timer is not None:
             timer.cancel()
+        if tokens is not None and tokens_lock is not None:
+            with tokens_lock:
+                tokens.discard(token)
 
 
 def run_batch(
@@ -68,6 +80,8 @@ def run_batch(
         raise ValueError("on_error 必须为 continue 或 stop")
     source = iter(payloads)
     stopped = False
+    tokens: set[CancellationToken] = set()
+    tokens_lock = threading.Lock()
     with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="pgt-agent") as pool:
         pending: list[tuple[int, Future]] = []
         while True:
@@ -75,7 +89,12 @@ def run_batch(
                 try:
                     item = next(source)
                     pending.append(
-                        (item[0], pool.submit(_run_one, api, item[1], timeout))
+                        (
+                            item[0],
+                            pool.submit(
+                                _run_one, api, item[1], timeout, tokens, tokens_lock
+                            ),
+                        )
                     )
                 except StopIteration:
                     break
@@ -85,6 +104,9 @@ def run_batch(
             try:
                 result = future.result()
             except KeyboardInterrupt:
+                with tokens_lock:
+                    for token in tokens:
+                        token.cancel()
                 for _, running in pending:
                     running.cancel()
                 raise
@@ -114,6 +136,8 @@ def run_server(api: AgentAPI, stdin, stdout) -> int:
             if "request" not in envelope:
                 raise ValueError("缺少 request")
             result = api.generate(envelope["request"])
+        except KeyboardInterrupt:
+            raise
         except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
             result = api.failure(api_error(str(exc)))
         stdout.write(json.dumps({"id": request_id, "result": result}, ensure_ascii=False) + "\n")

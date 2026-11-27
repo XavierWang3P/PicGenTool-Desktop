@@ -37,13 +37,16 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Compile Python sources
-        run: python -m compileall main.py app.py config.py ui services models utils tools tests
+        run: python -m compileall main.py app.py agent_cli.py config.py ui services models utils tools tests
 
       - name: Run tests
         run: python -m pytest -q
 
       - name: Validate Word templates
         run: python tools/check_templates.py
+
+      - name: Check headless capabilities
+        run: python main.py --capabilities --json
 
   build:
     needs: test
@@ -101,6 +104,13 @@ jobs:
         shell: pwsh
         run: |
           ./dist/PGT/PGT.exe --diagnose
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Run packaged agent smoke test
+        shell: pwsh
+        run: |
+          $env:PYTHONUTF8 = "1"
+          ./dist/PGT/PGT.exe --capabilities --json
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Check package size

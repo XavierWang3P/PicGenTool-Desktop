@@ -15,9 +15,10 @@ def test_workflow_runs_test_matrix_before_build() -> None:
     assert re.search(r"python-version:\s*\[\s*[\"']?3\.11[\"']?\s*,\s*[\"']?3\.12", text)
     assert "pip install -r requirements.txt" in text
     assert "pip install -r requirements-dev.txt" in text
-    assert "python -m compileall main.py app.py config.py ui services models utils tools tests" in text
+    assert "python -m compileall main.py app.py agent_cli.py config.py ui services models utils tools tests" in text
     assert "python -m pytest -q" in text
     assert "python tools/check_templates.py" in text
+    assert "python main.py --capabilities --json" in text
     assert re.search(r"(?ms)^  build:\s*\n\s+needs:\s*test\s*$", text)
 
 
@@ -34,6 +35,7 @@ def test_workflow_checks_package_size_and_uploads_report() -> None:
 
     assert "python tools/package_report.py dist/PGT --max-mib 130 --json package-report.json" in text
     assert "./dist/PGT/PGT.exe --diagnose" in build_job
+    assert "./dist/PGT/PGT.exe --capabilities --json" in build_job
     assert "actions/upload-artifact@" in build_job
     assert "path: package-report.json" in build_job
 

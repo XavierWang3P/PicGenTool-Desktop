@@ -1,13 +1,13 @@
 {
   "root": "D:\\Projects\\PicGenTool\\dist\\PGT",
-  "file_count": 944,
-  "total_bytes": 118586777,
-  "total_mib": 113.09316349029541,
+  "file_count": 951,
+  "total_bytes": 118694974,
+  "total_mib": 113.19634819030762,
   "max_bytes": 136314880,
   "within_budget": true,
   "groups": {
-    "_internal": 118105276,
-    "(root)": 481501
+    "_internal": 118210593,
+    "(root)": 484381
   },
   "largest_files": [
     {

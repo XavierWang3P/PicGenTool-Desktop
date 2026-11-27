@@ -31,6 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
     action.add_argument("--validate", metavar="JSON_FILE", help="只校验请求，不生成")
     action.add_argument("--capabilities", action="store_true", help="报告支持能力")
     action.add_argument("--schema", action="store_true", help="输出请求 JSON Schema")
+    action.add_argument("--diagnose", action="store_true", help="输出机器可读诊断")
     action.add_argument("--serve", action="store_true", help="运行 stdin/stdout NDJSON 服务")
     action.add_argument("--batch", metavar="JSONL_FILE", help="批量处理 JSON Lines 请求")
     parser.add_argument("--json", action="store_true", help="使用 JSON 输出（自动化默认）")
@@ -45,6 +46,38 @@ def _configure_utf8(stream) -> None:
     reconfigure = getattr(stream, "reconfigure", None)
     if reconfigure is not None:
         reconfigure(encoding="utf-8")
+
+
+def _diagnostics_payload() -> dict:
+    from services.diagnostics import DiagnosticsService
+
+    snapshot = DiagnosticsService().collect(deep_templates=True)
+    template = snapshot.template_result
+    return {
+        "ok": template.valid and snapshot.heif_available,
+        "app_version": snapshot.app_version,
+        "python_version": snapshot.python_version,
+        "platform": snapshot.platform,
+        "packaged": snapshot.packaged,
+        "heif": {
+            "available": snapshot.heif_available,
+            "version": snapshot.heif_version,
+        },
+        "templates": {
+            "valid": template.valid,
+            "checked_count": template.checked_count,
+            "issues": [
+                {
+                    "image_count": issue.template_number,
+                    "code": issue.code,
+                    "message": issue.message,
+                }
+                for issue in template.issues
+            ],
+        },
+        "log_available": snapshot.log_path is not None,
+        "explorer_menu": snapshot.explorer_status.value,
+    }
 
 
 def _read_request(source: str, stdin) -> object:
@@ -85,7 +118,10 @@ def run_agent_cli(argv: list[str], stdin=None, stdout=None, stderr=None) -> int:
     try:
         args = build_parser().parse_args(argv)
         api = AgentAPI()
-        if args.schema:
+        if args.diagnose:
+            result = _diagnostics_payload()
+            code = 0 if result["ok"] else 3
+        elif args.schema:
             result = request_schema()
             code = 0
         elif args.capabilities:
@@ -96,6 +132,8 @@ def run_agent_cli(argv: list[str], stdin=None, stdout=None, stderr=None) -> int:
             result = api.validate(payload) if args.validate else api.generate(payload)
             code = _exit_code(result)
         elif args.batch or args.serve:
+            if args.result_file:
+                raise ValueError("批处理和常驻服务不支持 --result-file")
             from services.agent_runner import run_batch_file, run_server
 
             if args.batch:

@@ -9,6 +9,7 @@
 - 按文件内容 SHA-256 精确去重，不做视觉相似判断
 - 按模板生成活动照片 Word 文档
 - 可选生成后自动打开文件
+- Agent 可通过无界面 JSON CLI、JSONL 批处理与常驻 stdin/stdout 服务生成文档，见 `docs/agent-integration.md`
 - 记住上次表单偏好；有效拖拽提供高亮与文字反馈
 - “关于 / 诊断”提供版本、HEIF、模板、日志和右键菜单状态
 
@@ -101,6 +102,19 @@ python main.py
 ```bash
 python app.py
 ```
+
+## Agent 自动化
+
+支持单任务 JSON 请求、请求校验、能力发现、JSONL 批处理和常驻标准流服务。无头模式不启动 Qt、不修改用户偏好、不弹窗或打开 Word，默认不覆盖已有文档。
+
+```bash
+python main.py --capabilities --json
+python main.py --generate request.json --json
+python main.py --batch jobs.jsonl --workers 2 --on-error continue --json
+python main.py --serve --json
+```
+
+完整请求 Schema、错误码、退出码、超时与安全约束见 `docs/agent-integration.md`；自动化开发指引见 `AGENTS.md`。
 
 ## 开发调试建议
 

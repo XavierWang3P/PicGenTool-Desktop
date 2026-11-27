@@ -207,6 +207,8 @@ class AgentAPI:
             ) from exc
 
         if_exists = data["options"]["if_exists"]
+        if output.is_dir():
+            raise AgentError("OUTPUT_NOT_WRITABLE", "输出路径是目录")
         if output.exists():
             if if_exists == "skip":
                 skip = True
@@ -321,10 +323,12 @@ class AgentAPI:
     def _map_error(error: Exception) -> tuple[str, str, dict]:
         if isinstance(error, ValueError):
             return "IMAGE_READ_FAILED", str(error), {}
+        if isinstance(error, PermissionError):
+            return "OUTPUT_NOT_WRITABLE", "无法写入输出文件，请检查路径或文件占用", {}
         if isinstance(error, FileNotFoundError):
             return "TEMPLATE_MISSING", "所需模板不存在", {}
-        if isinstance(error, (PermissionError, IsADirectoryError)):
-            return "OUTPUT_NOT_WRITABLE", "无法写入输出文件，请检查路径或文件占用", {}
+        if isinstance(error, IsADirectoryError):
+            return "OUTPUT_NOT_WRITABLE", "输出路径是目录", {}
         if isinstance(error, OSError):
             return "OUTPUT_NOT_WRITABLE", "文档保存失败，请检查输出目录", {}
         return "INTERNAL_ERROR", "发生未预期错误，请查看诊断日志", {}

@@ -1,5 +1,15 @@
 # 更新日志
 
+## [未发布] - 2026-11-27
+
+### Agent 自动化
+- 抽出 Qt 无关的共享生成流水线，GUI 保留现有进度、取消和打开文件行为
+- 新增 `--generate`、`--validate`、`--capabilities`、`--schema`、`--diagnose --json` 无头 CLI
+- 提供版本化请求 Schema、结构化结果、稳定错误码、UTF-8 标准流和明确输出覆盖策略
+- 新增 `--batch` JSONL 批处理，支持 1～4 个有界工作线程、失败继续/停止和逐任务协作超时
+- 新增 `--serve` 常驻 stdin/stdout NDJSON 服务，支持关联 ID、坏请求恢复和 EOF 退出
+- 无头模式不导入 PyQt、不读写 QSettings、不弹窗、不自动打开 Word；补充 Agent 集成文档
+
 ## [未发布] - 2026-11-26
 
 ### 输入与图片处理
