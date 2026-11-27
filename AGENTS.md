@@ -9,4 +9,4 @@
 5. 不要试图启用 `open` 或 `use_settings`；无头接口不会弹窗或修改 GUI 偏好。
 6. 批量任务使用有界 `--workers 1..4`；需要幂等重试时使用 `if_exists=skip`。
 
-完整协议见 `docs/agent-integration.md`。
+完整协议见 `docs/agent-integration.md`；面向 Agent 的分步操作指南见 `docs/agents-usage.md`。

@@ -177,6 +177,7 @@ def run_agent_cli(argv: list[str], stdin=None, stdout=None, stderr=None) -> int:
         code = 2
         _write_json(result, stdout)
         return code
+    except Exception as exc:
         result = api.failure(exc) if "api" in locals() else {
             "ok": False,
             "error": {"code": "INTERNAL_ERROR", "message": "发生未预期错误", "details": {}},

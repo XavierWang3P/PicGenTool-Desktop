@@ -9,7 +9,7 @@
 - 按文件内容 SHA-256 精确去重，不做视觉相似判断
 - 按模板生成活动照片 Word 文档
 - 可选生成后自动打开文件
-- Agent 可通过无界面 JSON CLI、JSONL 批处理与常驻 stdin/stdout 服务生成文档，见 `docs/agent-integration.md`
+- Agent 可通过无界面 JSON CLI、JSONL 批处理与常驻 stdin/stdout 服务生成文档，使用指南见 `docs/agents-usage.md`
 - 记住上次表单偏好；有效拖拽提供高亮与文字反馈
 - “关于 / 诊断”提供版本、HEIF、模板、日志和右键菜单状态
 
